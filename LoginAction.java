@@ -1,20 +1,33 @@
 package com.example;
 
-public class Employee {
-    private int id;
-    private String firstName;
-    private String lastName;
-    private String city;
+import java.sql.*;
+import javax.servlet.http.*;
+import org.apache.struts.action.*;
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+public class LoginAction extends Action {
+    public ActionForward execute(ActionMapping mapping, ActionForm form,
+        HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+        LoginForm loginForm = (LoginForm) form;
+        String user = loginForm.getUsername();
+        String pass = loginForm.getPassword();
 
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT * FROM users WHERE username = ? AND password = ?")) {
 
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
+            ps.setString(1, user);
+            ps.setString(2, pass);
+
+            try (ResultSet rs = ps.executeQuery()) {
+            	if (rs.next()) {
+            	    return mapping.findForward("success");
+            	} else {
+            	    request.setAttribute("error", "Invalid username or password!");
+            	    return mapping.findForward("failure");  // shows error on same page
+            	}
+
+            }
+        }
+    }
 }
